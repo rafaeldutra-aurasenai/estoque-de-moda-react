@@ -1,9 +1,12 @@
 // Este é o "elo" entre a tela React e o banco de dados.
 // O React NUNCA fala direto com o MySQL — ele chama esta API (o backend
 // em server/), e é o backend que roda o SQL. Por isso toda função aqui
-// é só um fetch() para os endereços definidos em server/routes/produtos.js
+// é só um fetch() para os endereços definidos em server/routes/.
 
-const BASE_URL = 'http://localhost:3001/api/produtos';
+const API_URL = 'http://localhost:3001/api';
+const BASE_URL = `${API_URL}/produtos`;
+
+/* ---------------------------- PRODUTOS ---------------------------- */
 
 export async function listarProdutos() {
   const resposta = await fetch(BASE_URL);
@@ -40,4 +43,28 @@ export async function atualizarProduto(sku, produto) {
 export async function excluirProduto(sku) {
   const resposta = await fetch(`${BASE_URL}/${sku}`, { method: 'DELETE' });
   if (!resposta.ok) throw new Error('Erro ao excluir produto');
+}
+
+/* ------------------------- MOVIMENTAÇÕES -------------------------- */
+
+export async function listarMovimentacoes() {
+  const resposta = await fetch(`${API_URL}/movimentacoes`);
+  if (!resposta.ok) throw new Error('Erro ao buscar movimentações');
+  return resposta.json();
+}
+
+/* ----------------------------- PEDIDOS ---------------------------- */
+
+export async function listarPedidos() {
+  const resposta = await fetch(`${API_URL}/pedidos`);
+  if (!resposta.ok) throw new Error('Erro ao buscar pedidos');
+  return resposta.json();
+}
+
+/* --------------------------- CATEGORIAS --------------------------- */
+
+export async function listarCategorias() {
+  const resposta = await fetch(`${API_URL}/categorias`);
+  if (!resposta.ok) throw new Error('Erro ao buscar categorias');
+  return resposta.json();
 }
