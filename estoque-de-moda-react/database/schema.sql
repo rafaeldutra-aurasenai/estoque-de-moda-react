@@ -136,3 +136,13 @@ INSERT INTO pedido_itens (pedido_id, sku, variant, qty, price) VALUES
 (3, 'SM-0356-MT', 'M · Mostarda', 2, 179.90),
 (3, 'BR-0093-DR', 'Único · Dourado', 1, 69.90),
 (4, 'CP-0299-PT', '40 · Preto', 1, 219.00);
+
+USE estoque_moda;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+  id        INT AUTO_INCREMENT PRIMARY KEY,
+  nome      VARCHAR(150) NOT NULL,
+  email     VARCHAR(150) NOT NULL UNIQUE,
+  senha     VARCHAR(255) NOT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

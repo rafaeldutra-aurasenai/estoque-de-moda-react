@@ -32,7 +32,15 @@ const produtosController = {
     }
 
     try {
-      const produto = await ProdutoService.criar(req.body);
+      // Captura a imagem se tiver sido enviada pelo Multer
+      const imagem = req.file ? `/uploads/produtos/${req.file.filename}` : null;
+
+      const dadosProduto = {
+        ...req.body,
+        imagem // Adiciona o caminho da imagem
+      };
+
+      const produto = await ProdutoService.criar(dadosProduto);
       res.status(201).json(produto);
     } catch (erro) {
       console.error(erro);
@@ -43,7 +51,14 @@ const produtosController = {
   // PUT /api/produtos/:sku
   async atualizar(req, res) {
     try {
-      const produto = await ProdutoService.atualizar(req.params.sku, req.body);
+      const dadosAtualizacao = { ...req.body };
+
+      // Se uma nova imagem foi enviada no update, atualiza o caminho
+      if (req.file) {
+        dadosAtualizacao.imagem = `/uploads/produtos/${req.file.filename}`;
+      }
+
+      const produto = await ProdutoService.atualizar(req.params.sku, dadosAtualizacao);
       if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
       res.json(produto);
     } catch (erro) {

@@ -30,3 +30,5 @@ export const uploadFoto = multer({
     cb(null, true);
   },
 });
+
+export default upload;

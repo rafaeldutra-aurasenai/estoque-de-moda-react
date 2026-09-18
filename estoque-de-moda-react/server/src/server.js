@@ -26,3 +26,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
