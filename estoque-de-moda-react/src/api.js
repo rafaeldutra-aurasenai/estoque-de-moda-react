@@ -1,70 +1,148 @@
-// Este é o "elo" entre a tela React e o banco de dados.
-// O React NUNCA fala direto com o MySQL — ele chama esta API (o backend
-// em server/), e é o backend que roda o SQL. Por isso toda função aqui
-// é só um fetch() para os endereços definidos em server/routes/.
+const API_URL = "http://localhost:3001/api";
 
-const API_URL = 'http://localhost:3001/api';
 const BASE_URL = `${API_URL}/produtos`;
 
-/* ---------------------------- PRODUTOS ---------------------------- */
+async function tratarResposta(resposta, mensagem) {
+  if (!resposta.ok) {
+    let erro = mensagem;
 
-export async function listarProdutos() {
-  const resposta = await fetch(BASE_URL);
-  if (!resposta.ok) throw new Error('Erro ao buscar produtos');
+    try {
+      const dados = await resposta.json();
+
+      if (dados.erro) {
+        erro = dados.erro;
+      }
+    } catch {
+      // Mantém a mensagem original quando a resposta não é JSON.
+    }
+
+    throw new Error(erro);
+  }
+
   return resposta.json();
 }
 
+// =============================
+// PRODUTOS
+// =============================
+
+export async function listarProdutos() {
+  const resposta = await fetch(BASE_URL);
+
+  return tratarResposta(
+    resposta,
+    "Erro ao buscar produtos"
+  );
+}
+
 export async function buscarProduto(sku) {
-  const resposta = await fetch(`${BASE_URL}/${sku}`);
-  if (!resposta.ok) return null;
-  return resposta.json();
+  const resposta = await fetch(
+    `${BASE_URL}/${encodeURIComponent(sku)}`
+  );
+
+  if (resposta.status === 404) {
+    return null;
+  }
+
+  return tratarResposta(
+    resposta,
+    "Erro ao buscar produto"
+  );
 }
 
 export async function criarProduto(produto) {
   const resposta = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(produto),
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify(produto)
   });
-  if (!resposta.ok) throw new Error('Erro ao criar produto');
-  return resposta.json();
+
+  return tratarResposta(
+    resposta,
+    "Erro ao criar produto"
+  );
 }
 
 export async function atualizarProduto(sku, produto) {
-  const resposta = await fetch(`${BASE_URL}/${sku}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(produto),
-  });
-  if (!resposta.ok) throw new Error('Erro ao atualizar produto');
-  return resposta.json();
+  const resposta = await fetch(
+    `${BASE_URL}/${encodeURIComponent(sku)}`,
+    {
+      method: "PUT",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify(produto)
+    }
+  );
+
+  return tratarResposta(
+    resposta,
+    "Erro ao atualizar produto"
+  );
 }
 
 export async function excluirProduto(sku) {
-  const resposta = await fetch(`${BASE_URL}/${sku}`, { method: 'DELETE' });
-  if (!resposta.ok) throw new Error('Erro ao excluir produto');
+  const resposta = await fetch(
+    `${BASE_URL}/${encodeURIComponent(sku)}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  if (!resposta.ok) {
+    throw new Error("Erro ao excluir produto");
+  }
+
+  return true;
 }
 
-/* ------------------------- MOVIMENTAÇÕES -------------------------- */
+// =============================
+// MOVIMENTAÇÕES
+// =============================
 
 export async function listarMovimentacoes() {
-  const resposta = await fetch(`${API_URL}/movimentacoes`);
-  if (!resposta.ok) throw new Error('Erro ao buscar movimentações');
-  return resposta.json();
+  const resposta = await fetch(
+    `${API_URL}/movimentacoes`
+  );
+
+  return tratarResposta(
+    resposta,
+    "Erro ao buscar movimentações"
+  );
 }
 
-/* ----------------------------- PEDIDOS ---------------------------- */
+// =============================
+// PEDIDOS
+// =============================
 
 export async function listarPedidos() {
-  const resposta = await fetch(`${API_URL}/pedidos`);
-  if (!resposta.ok) throw new Error('Erro ao buscar pedidos');
-  return resposta.json();
+  const resposta = await fetch(
+    `${API_URL}/pedidos`
+  );
+
+  return tratarResposta(
+    resposta,
+    "Erro ao buscar pedidos"
+  );
 }
 
-/* --------------------------- CATEGORIAS --------------------------- */
+// =============================
+// CATEGORIAS
+// =============================
 
 export async function listarCategorias() {
-  const resposta = await fetch(`${API_URL}/categorias`);
-  if (!resposta.ok) throw new Error('Erro ao buscar categorias');
-  return resposta.json();
+  const resposta = await fetch(
+    `${API_URL}/categorias`
+  );
+
+  return tratarResposta(
+    resposta,
+    "Erro ao buscar categorias"
+  );
 }

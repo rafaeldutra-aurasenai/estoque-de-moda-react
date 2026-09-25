@@ -2,11 +2,11 @@
   "name": "estoque-de-moda-server",
   "version": "1.0.0",
   "description": "API que liga a tela React ao banco MySQL",
-  "main": "server.js",
   "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
