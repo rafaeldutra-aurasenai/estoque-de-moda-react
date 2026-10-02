@@ -1,243 +1,332 @@
+
 -- ============================================================
--- BANCO DE DADOS - ESTOQUE DE MODA
--- VERSÃO VAZIA PARA O CLIENTE COMEÇAR DO ZERO
--- Compatível com o backend atual do projeto React + Node/Express
--- + MySQL
---
--- O banco começa sem produtos, fornecedores, movimentações ou
--- pedidos. O cliente cadastra tudo pelo painel.
+-- ESTOQUE DE MODA
+-- BANCO MULTI-LOJA / MULTIUSUÁRIO
 -- ============================================================
 
 DROP DATABASE IF EXISTS estoque_moda;
 
 CREATE DATABASE estoque_moda
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 USE estoque_moda;
 
+
 -- ============================================================
--- USUARIOS
--- Mantém somente o usuário inicial necessário para o painel.
+-- LOJAS
+-- Cada cliente possui uma loja própria.
+-- ============================================================
+
+CREATE TABLE lojas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    nome VARCHAR(120) NOT NULL,
+
+    codigo_acesso VARCHAR(20) NOT NULL UNIQUE,
+
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+) ENGINE=InnoDB;
+
+
+-- ============================================================
+-- USUÁRIOS
+-- Cada usuário pertence a uma loja.
 -- ============================================================
 
 CREATE TABLE usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
+    loja_id INT NOT NULL,
+
     nome VARCHAR(80) NOT NULL,
+
     sobrenome VARCHAR(80),
+
     email VARCHAR(150) NOT NULL UNIQUE,
+
     telefone VARCHAR(20),
+
     cargo VARCHAR(120),
+
     empresa VARCHAR(120),
+
     foto VARCHAR(255),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    senha VARCHAR(255) NOT NULL,
+
+    papel ENUM('dono', 'funcionario') NOT NULL DEFAULT 'funcionario',
+
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_usuario_loja
+        FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
+        ON DELETE CASCADE,
+
+    INDEX idx_usuario_loja (loja_id)
+
 ) ENGINE=InnoDB;
 
-INSERT INTO usuarios (
-    nome,
-    email,
-    cargo,
-    empresa
-) VALUES (
-    'Administrador',
-    'admin@estoquemoda.com',
-    'Administrador',
-    'Minha Loja'
-);
 
 -- ============================================================
--- CONFIGURACOES
--- Configuração inicial necessária para o painel.
+-- CONFIGURAÇÕES
+-- Uma configuração pertence a uma loja.
 -- ============================================================
 
 CREATE TABLE configuracoes (
-    usuario_id INT PRIMARY KEY,
+    loja_id INT PRIMARY KEY,
 
     nome_marca VARCHAR(120) NOT NULL DEFAULT 'Minha Loja',
+
     alerta_estoque TINYINT(1) NOT NULL DEFAULT 1,
+
     email_pedidos TINYINT(1) NOT NULL DEFAULT 1,
-    modo_escuro TINYINT(1) NOT NULL DEFAULT 0,
-    moeda VARCHAR(10) NOT NULL DEFAULT 'BRL',
 
-    atualizado_em TIMESTAMP
-        DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_configuracoes_usuario
-        FOREIGN KEY (usuario_id)
-        REFERENCES usuarios(id)
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
         ON DELETE CASCADE
+
 ) ENGINE=InnoDB;
 
-INSERT INTO configuracoes (usuario_id, nome_marca)
-VALUES (1, 'Minha Loja');
+
+-- ============================================================
+-- CATEGORIAS
+-- ============================================================
+
+CREATE TABLE categorias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    loja_id INT NOT NULL,
+
+    nome VARCHAR(100) NOT NULL,
+
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
+        ON DELETE CASCADE,
+
+    UNIQUE KEY uk_categoria_loja (loja_id, nome),
+
+    INDEX idx_categoria_loja (loja_id)
+
+) ENGINE=InnoDB;
+
 
 -- ============================================================
 -- FORNECEDORES
--- VAZIA: o cliente cadastra os próprios fornecedores.
 -- ============================================================
 
 CREATE TABLE fornecedores (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    name VARCHAR(150) NOT NULL,
-    cnpj VARCHAR(18),
-    cat VARCHAR(50) NOT NULL,
-    phone VARCHAR(20),
+    loja_id INT NOT NULL,
+
+    nome VARCHAR(150) NOT NULL,
+
+    contato VARCHAR(150),
+
+    telefone VARCHAR(30),
+
     email VARCHAR(150),
-    products VARCHAR(255),
 
-    status ENUM('Ativo', 'Inativo', 'Pendente')
-        NOT NULL DEFAULT 'Ativo',
+    endereco VARCHAR(255),
 
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    cidade VARCHAR(100),
+
+    observacoes TEXT,
+
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
+        ON DELETE CASCADE,
+
+    INDEX idx_fornecedor_loja (loja_id)
+
 ) ENGINE=InnoDB;
+
 
 -- ============================================================
 -- PRODUTOS
--- VAZIA: o cliente cadastra os próprios produtos.
+-- Cada produto pertence a uma loja.
 -- ============================================================
 
 CREATE TABLE produtos (
-    sku VARCHAR(20) PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    loja_id INT NOT NULL,
+
+    sku VARCHAR(50) NOT NULL,
 
     name VARCHAR(150) NOT NULL,
-    cat VARCHAR(50) NOT NULL,
+
+    cat VARCHAR(100),
 
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
     stock INT NOT NULL DEFAULT 0,
+
     min_stock INT NOT NULL DEFAULT 0,
 
-    emoji VARCHAR(10) DEFAULT '👗',
+    emoji VARCHAR(20) DEFAULT '👗',
+
     color VARCHAR(30) DEFAULT '#EFEAE2',
 
-    supplier VARCHAR(120),
+    supplier VARCHAR(150),
+
     location VARCHAR(120),
 
     entry_date DATE,
 
     colors JSON,
+
     sizes JSON,
 
     descricao TEXT,
 
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX idx_produtos_cat (cat),
-    INDEX idx_produtos_stock (stock),
-    INDEX idx_produtos_criado_em (criado_em)
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
+        ON DELETE CASCADE,
+
+    UNIQUE KEY uk_produto_loja_sku (loja_id, sku),
+
+    INDEX idx_produto_loja (loja_id),
+
+    INDEX idx_produto_categoria (loja_id, cat),
+
+    INDEX idx_produto_estoque (loja_id, stock)
+
 ) ENGINE=InnoDB;
 
+
 -- ============================================================
--- MOVIMENTACOES
--- VAZIA: será preenchida conforme o cliente movimentar estoque.
+-- MOVIMENTAÇÕES
+-- Entrada e saída de produtos.
 -- ============================================================
 
 CREATE TABLE movimentacoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    sku VARCHAR(20) NOT NULL,
+    loja_id INT NOT NULL,
 
-    type ENUM('in', 'out') NOT NULL,
+    produto_id INT NOT NULL,
 
-    qty INT NOT NULL,
-    reason VARCHAR(150),
+    usuario_id INT NOT NULL,
+
+    tipo ENUM('entrada', 'saida') NOT NULL,
+
+    quantidade INT NOT NULL,
+
+    observacao VARCHAR(255),
 
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_movimentacoes_produto
-        FOREIGN KEY (sku)
-        REFERENCES produtos(sku)
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
         ON DELETE CASCADE,
 
-    INDEX idx_movimentacoes_sku (sku),
-    INDEX idx_movimentacoes_criado_em (criado_em)
+    FOREIGN KEY (produto_id)
+        REFERENCES produtos(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (usuario_id)
+        REFERENCES usuarios(id)
+        ON DELETE CASCADE,
+
+    INDEX idx_movimentacao_loja (loja_id),
+
+    INDEX idx_movimentacao_produto (produto_id)
+
 ) ENGINE=InnoDB;
+
 
 -- ============================================================
 -- PEDIDOS
--- VAZIA: o cliente cria os próprios pedidos.
 -- ============================================================
 
 CREATE TABLE pedidos (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
-    client_name VARCHAR(150) NOT NULL,
+    loja_id INT NOT NULL,
+
+    client_name VARCHAR(150),
+
     client_email VARCHAR(150),
-    city VARCHAR(150),
+
+    city VARCHAR(100),
 
     freight DECIMAL(10,2) NOT NULL DEFAULT 0.00,
 
     status ENUM(
-        'Pendente',
-        'Enviado',
-        'Entregue',
-        'Cancelado'
-    ) NOT NULL DEFAULT 'Pendente',
+        'pendente',
+        'processando',
+        'enviado',
+        'entregue',
+        'cancelado'
+    ) NOT NULL DEFAULT 'pendente',
 
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX idx_pedidos_status (status),
-    INDEX idx_pedidos_criado_em (criado_em)
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (loja_id)
+        REFERENCES lojas(id)
+        ON DELETE CASCADE,
+
+    INDEX idx_pedido_loja (loja_id),
+
+    INDEX idx_pedido_status (loja_id, status)
+
 ) ENGINE=InnoDB;
 
+
 -- ============================================================
--- PEDIDO_ITENS
--- VAZIA: itens são criados junto com os pedidos.
+-- ITENS DOS PEDIDOS
 -- ============================================================
 
 CREATE TABLE pedido_itens (
     id INT AUTO_INCREMENT PRIMARY KEY,
 
     pedido_id INT NOT NULL,
-    sku VARCHAR(20) NOT NULL,
 
-    variant VARCHAR(50),
+    produto_id INT NOT NULL,
 
-    qty INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    quantidade INT NOT NULL,
 
-    CONSTRAINT fk_pedido_itens_pedido
-        FOREIGN KEY (pedido_id)
+    preco_unitario DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+    FOREIGN KEY (pedido_id)
         REFERENCES pedidos(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT fk_pedido_itens_produto
-        FOREIGN KEY (sku)
-        REFERENCES produtos(sku)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (produto_id)
+        REFERENCES produtos(id)
+        ON DELETE CASCADE,
 
-    INDEX idx_pedido_itens_pedido (pedido_id),
-    INDEX idx_pedido_itens_sku (sku)
+    INDEX idx_item_pedido (pedido_id),
+
+    INDEX idx_item_produto (produto_id)
+
 ) ENGINE=InnoDB;
 
--- ============================================================
--- VERIFICAÇÃO
--- Deve mostrar:
--- usuarios       = 1
--- configuracoes  = 1
--- fornecedores   = 0
--- produtos       = 0
--- movimentacoes  = 0
--- pedidos        = 0
--- pedido_itens   = 0
--- ============================================================
 
-SELECT 'Banco estoque_moda criado com sucesso!' AS mensagem;
-
-SELECT
-    'usuarios' AS tabela,
-    COUNT(*) AS registros
-FROM usuarios
-UNION ALL
-SELECT 'configuracoes', COUNT(*) FROM configuracoes
-UNION ALL
-SELECT 'fornecedores', COUNT(*) FROM fornecedores
-UNION ALL
-SELECT 'produtos', COUNT(*) FROM produtos
-UNION ALL
-SELECT 'movimentacoes', COUNT(*) FROM movimentacoes
-UNION ALL
-SELECT 'pedidos', COUNT(*) FROM pedidos
-UNION ALL
-SELECT 'pedido_itens', COUNT(*) FROM pedido_itens;
+-- ============================================================
+-- O BANCO TERMINA VAZIO.
+--
+-- Não existe usuário pronto.
+-- Não existe produto pronto.
+-- Não existe fornecedor pronto.
+-- Não existe pedido pronto.
+--
+-- A primeira pessoa que se cadastrar como DONO
+-- criará a primeira loja.
+-- ============================================================
