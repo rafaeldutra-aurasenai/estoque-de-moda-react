@@ -1,53 +1,128 @@
+
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { salvarSessao } from "../auth.js";
+
+const API_URL = "http://localhost:3001/api";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  function handleSubmit(e) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    navigate("/app/dashboard");
+
+    setErro("");
+    setCarregando(true);
+
+    try {
+      const resposta = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          senha,
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.mensagem || "E-mail ou senha incorretos."
+        );
+      }
+
+      // Salva o JWT e os dados do usuário
+      salvarSessao(dados);
+
+      // Entra no sistema
+      navigate("/app/dashboard", {
+        replace: true,
+      });
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
     <section>
       <div className="auth-shell">
-        <div className="auth-art">
-          <div className="brand-mark">ESTOQUE DE MODA</div>
-          <div className="pitch">
-            <h1>Cada peça, no lugar certo.</h1>
-            <p>Controle de coleções, tamanhos e cores em um só lugar — do recebimento à venda.</p>
-          </div>
-          <div className="stat-row">
-            <div><b>2.480</b><span>peças em estoque</span></div>
-            <div><b>36</b><span>fornecedores ativos</span></div>
-            <div><b>98%</b><span>pedidos no prazo</span></div>
-          </div>
-        </div>
         <div className="auth-form-wrap">
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="eyebrow">Bem-vinda de volta</div>
+          <form
+            className="auth-form"
+            onSubmit={handleSubmit}
+          >
             <h2>Entrar na sua conta</h2>
-            <div className="sub">Acesse o painel para gerenciar seu estoque.</div>
+
             <div className="field">
-              <label>E-mail</label>
-              <input type="email" placeholder="voce@marca.com.br" defaultValue="ana@atelieluz.com.br" />
-            </div>
-            <div className="field">
-              <label>Senha</label>
-              <input type="password" placeholder="••••••••" defaultValue="••••••••" />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", margin: "-4px 0 18px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)" }}>
-                <input type="checkbox" defaultChecked style={{ width: "auto" }} />
-                Lembrar de mim
+              <label htmlFor="email">
+                E-mail
               </label>
-              <Link to="/forgot" style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600 }}>
-                Esqueci a senha
-              </Link>
+
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                placeholder="Digite seu e-mail"
+                required
+              />
             </div>
-            <button className="btn btn-primary" type="submit">Entrar</button>
+
+            <div className="field">
+              <label htmlFor="senha">
+                Senha
+              </label>
+
+              <input
+                id="senha"
+                type="password"
+                value={senha}
+                onChange={(e) =>
+                  setSenha(e.target.value)
+                }
+                placeholder="Digite sua senha"
+                required
+              />
+            </div>
+
+            {erro && (
+              <p
+                style={{
+                  color: "red",
+                  marginTop: "10px",
+                }}
+              >
+                {erro}
+              </p>
+            )}
+
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={carregando}
+            >
+              {carregando
+                ? "Entrando..."
+                : "Entrar"}
+            </button>
+
             <div className="auth-foot">
-              Ainda não tem conta? <Link to="/signup">Criar conta</Link>
+              Ainda não tem conta?{" "}
+              <Link to="/signup">
+                Criar conta
+              </Link>
             </div>
           </form>
         </div>
