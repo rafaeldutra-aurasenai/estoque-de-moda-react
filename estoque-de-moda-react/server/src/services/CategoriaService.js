@@ -1,8 +1,8 @@
-import CategoriaRepository from '../repositories/CategoriaRepository.js';
+import CategoriaRepository from "../repositories/CategoriaRepository.js";
 
 const CategoriaService = {
-  async listarComContagem() {
-    return CategoriaRepository.listarComContagem();
+  async listarComContagem(lojaId) {
+    return CategoriaRepository.listarComContagem(lojaId);
   },
 };
 
