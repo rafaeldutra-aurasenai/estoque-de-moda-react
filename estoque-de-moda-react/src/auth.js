@@ -48,11 +48,11 @@ headers,
 if (resposta.status === 401) {
 limparSessao();
 
-```
+
 if (window.location.pathname.startsWith("/app")) {
   window.location.href = "/";
 }
-```
+
 
 }
 
