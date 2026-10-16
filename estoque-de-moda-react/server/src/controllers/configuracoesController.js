@@ -1,27 +1,34 @@
-import ConfiguracaoService from '../services/ConfiguracaoService.js';
+import ConfiguracaoService from "../services/ConfiguracaoService.js";
 
 const configuracoesController = {
-  // GET /api/configuracoes/:usuarioId
   async buscar(req, res) {
     try {
-      const config = await ConfiguracaoService.buscarPorUsuario(req.params.usuarioId);
-      if (!config) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(config);
+      const config = await ConfiguracaoService.buscarPorLoja(
+        req.usuario.loja_id
+      );
+
+      return res.json(config);
     } catch (erro) {
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao buscar configurações' });
+      return res.status(500).json({
+        error: "Erro ao buscar configurações da loja.",
+      });
     }
   },
 
-  // PUT /api/configuracoes/:usuarioId
   async atualizar(req, res) {
     try {
-      const config = await ConfiguracaoService.atualizar(req.params.usuarioId, req.body);
-      if (!config) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(config);
+      const config = await ConfiguracaoService.atualizar(
+        req.usuario.loja_id,
+        req.body
+      );
+
+      return res.json(config);
     } catch (erro) {
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao salvar configurações' });
+      return res.status(500).json({
+        error: "Erro ao salvar configurações da loja.",
+      });
     }
   },
 };

@@ -1,31 +1,47 @@
-import FornecedorRepository from '../repositories/FornecedorRepository.js';
+import FornecedorRepository from "../repositories/FornecedorRepository.js";
 
 const FornecedorService = {
-  async listar(termoBusca) {
-    return FornecedorRepository.listar(termoBusca);
+  async listar(lojaId, termoBusca) {
+    return FornecedorRepository.listar(lojaId, termoBusca);
   },
 
-  async buscarPorId(id) {
-    return FornecedorRepository.buscarPorId(id);
+  async buscarPorId(id, lojaId) {
+    return FornecedorRepository.buscarPorId(id, lojaId);
   },
 
-  async criar(dados) {
-    const status = dados.status || 'Ativo';
-    const id = await FornecedorRepository.criar({ ...dados, status });
-    return this.buscarPorId(id);
+  async criar(dados, lojaId) {
+    if (!dados.name || !dados.name.trim()) {
+      const erro = new Error("Informe o nome do fornecedor.");
+      erro.codigo = "DADOS_INVALIDOS";
+      throw erro;
+    }
+
+    const id = await FornecedorRepository.criar(dados, lojaId);
+    return this.buscarPorId(id, lojaId);
   },
 
-  // Retorna null se o fornecedor não existir
-  async atualizar(id, dados) {
-    const existente = await FornecedorRepository.buscarPorId(id);
+  async atualizar(id, lojaId, dados) {
+    const existente = await this.buscarPorId(id, lojaId);
     if (!existente) return null;
 
-    await FornecedorRepository.atualizar(id, dados);
-    return this.buscarPorId(id);
+    if (!dados.name || !dados.name.trim()) {
+      const erro = new Error("Informe o nome do fornecedor.");
+      erro.codigo = "DADOS_INVALIDOS";
+      throw erro;
+    }
+
+    const atualizado = await FornecedorRepository.atualizar(
+      id,
+      lojaId,
+      dados
+    );
+
+    if (!atualizado) return null;
+    return this.buscarPorId(id, lojaId);
   },
 
-  async remover(id) {
-    return FornecedorRepository.remover(id);
+  async remover(id, lojaId) {
+    return FornecedorRepository.remover(id, lojaId);
   },
 };
 

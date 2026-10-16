@@ -1,154 +1,100 @@
+
 import { apiFetch } from "./auth.js";
 
 const API_URL = "http://localhost:3001/api";
-
 const BASE_URL = `${API_URL}/produtos`;
 
 async function tratarResposta(resposta, mensagem) {
-if (!resposta.ok) {
-let erro = mensagem;
+  if (resposta.status === 204) return null;
 
+  if (!resposta.ok) {
+    let erro = mensagem;
 
-try {
-  const dados = await resposta.json();
+    try {
+      const dados = await resposta.json();
+      erro = dados.erro || dados.mensagem || dados.error || mensagem;
+    } catch {
+      // Usa a mensagem padrão.
+    }
 
-  erro =
-    dados.erro ||
-    dados.mensagem ||
-    dados.error ||
-    mensagem;
+    throw new Error(erro);
+  }
 
-} catch {
-  // Mantém a mensagem original.
-}
-
-throw new Error(erro);
-
-
-}
-
-return resposta.json();
+  return resposta.json();
 }
 
 export async function listarProdutos() {
-const resposta = await apiFetch(BASE_URL);
-
-return tratarResposta(
-resposta,
-"Erro ao buscar produtos"
-);
+  return tratarResposta(
+    await apiFetch(BASE_URL),
+    "Erro ao buscar produtos"
+  );
 }
 
 export async function buscarProduto(sku) {
-const resposta = await apiFetch(
-`${BASE_URL}/${encodeURIComponent(sku)}`
-);
+  const resposta = await apiFetch(
+    `${BASE_URL}/${encodeURIComponent(sku)}`
+  );
 
-if (resposta.status === 404) {
-return null;
-}
+  if (resposta.status === 404) return null;
 
-return tratarResposta(
-resposta,
-"Erro ao buscar produto"
-);
+  return tratarResposta(resposta, "Erro ao buscar produto");
 }
 
 export async function criarProduto(produto) {
-const resposta = await apiFetch(
-BASE_URL,
-{
-method: "POST",
-
-
-  headers: {
-    "Content-Type": "application/json",
-  },
-
-  body: JSON.stringify(produto),
+  return tratarResposta(
+    await apiFetch(BASE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(produto),
+    }),
+    "Erro ao criar produto"
+  );
 }
 
-
-);
-
-return tratarResposta(
-resposta,
-"Erro ao criar produto"
-);
-}
-
-export async function atualizarProduto(
-sku,
-produto
-) {
-const resposta = await apiFetch(
-`${BASE_URL}/${encodeURIComponent(sku)}`,
-{
-method: "PUT",
-
-
-  headers: {
-    "Content-Type": "application/json",
-  },
-
-  body: JSON.stringify(produto),
-}
-
-
-);
-
-return tratarResposta(
-resposta,
-"Erro ao atualizar produto"
-);
+export async function atualizarProduto(sku, produto) {
+  return tratarResposta(
+    await apiFetch(`${BASE_URL}/${encodeURIComponent(sku)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(produto),
+    }),
+    "Erro ao atualizar produto"
+  );
 }
 
 export async function excluirProduto(sku) {
-const resposta = await apiFetch(
-`${BASE_URL}/${encodeURIComponent(sku)}`,
-{
-method: "DELETE",
-}
-);
-
-if (!resposta.ok) {
-throw new Error(
-"Erro ao excluir produto"
-);
-}
-
-return true;
+  return tratarResposta(
+    await apiFetch(`${BASE_URL}/${encodeURIComponent(sku)}`, {
+      method: "DELETE",
+    }),
+    "Erro ao excluir produto"
+  );
 }
 
 export async function listarMovimentacoes() {
-const resposta = await apiFetch(
-`${API_URL}/movimentacoes`
-);
-
-return tratarResposta(
-resposta,
-"Erro ao buscar movimentações"
-);
+  return tratarResposta(
+    await apiFetch(`${API_URL}/movimentacoes`),
+    "Erro ao buscar movimentações"
+  );
 }
 
 export async function listarPedidos() {
-const resposta = await apiFetch(
-`${API_URL}/pedidos`
-);
-
-return tratarResposta(
-resposta,
-"Erro ao buscar pedidos"
-);
+  return tratarResposta(
+    await apiFetch(`${API_URL}/pedidos`),
+    "Erro ao buscar pedidos"
+  );
 }
 
 export async function listarCategorias() {
-const resposta = await apiFetch(
-`${API_URL}/categorias`
-);
+  return tratarResposta(
+    await apiFetch(`${API_URL}/categorias`),
+    "Erro ao buscar categorias"
+  );
+}
 
-return tratarResposta(
-resposta,
-"Erro ao buscar categorias"
-);
+export async function listarFornecedores() {
+  return tratarResposta(
+    await apiFetch(`${API_URL}/fornecedores`),
+    "Erro ao buscar fornecedores"
+  );
 }

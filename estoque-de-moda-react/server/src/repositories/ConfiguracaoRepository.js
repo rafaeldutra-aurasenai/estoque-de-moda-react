@@ -1,27 +1,44 @@
-import { pool } from '../config/db.js';
+import { pool } from "../config/db.js";
 
 const ConfiguracaoRepository = {
-  async buscarPorUsuario(usuarioId, executor = pool) {
+  async buscarPorLoja(lojaId, executor = pool) {
     const [linhas] = await executor.query(
-      'SELECT * FROM configuracoes WHERE usuario_id = ?',
-      [usuarioId]
+      `SELECT loja_id, nome_marca, alerta_estoque, email_pedidos
+       FROM configuracoes
+       WHERE loja_id = ?
+       LIMIT 1`,
+      [lojaId]
     );
+
     return linhas[0] ?? null;
   },
 
-  async criarPadrao(usuarioId, executor = pool) {
-    await executor.query('INSERT INTO configuracoes (usuario_id) VALUES (?)', [usuarioId]);
+  async criarPadrao(lojaId, nomeMarca = "Minha Loja", executor = pool) {
+    await executor.query(
+      `INSERT INTO configuracoes
+         (loja_id, nome_marca, alerta_estoque, email_pedidos)
+       VALUES (?, ?, 1, 1)
+       ON DUPLICATE KEY UPDATE loja_id = VALUES(loja_id)`,
+      [lojaId, nomeMarca]
+    );
   },
 
-  async atualizar(usuarioId, dados, executor = pool) {
-    const { nome_marca, alerta_estoque, email_pedidos, modo_escuro, moeda } = dados;
-
-    await executor.query(
+  async atualizar(lojaId, dados, executor = pool) {
+    const [resultado] = await executor.query(
       `UPDATE configuracoes
-         SET nome_marca=?, alerta_estoque=?, email_pedidos=?, modo_escuro=?, moeda=?
-       WHERE usuario_id=?`,
-      [nome_marca, alerta_estoque, email_pedidos, modo_escuro, moeda, usuarioId]
+       SET nome_marca = ?,
+           alerta_estoque = ?,
+           email_pedidos = ?
+       WHERE loja_id = ?`,
+      [
+        dados.nome_marca,
+        dados.alerta_estoque ? 1 : 0,
+        dados.email_pedidos ? 1 : 0,
+        lojaId,
+      ]
     );
+
+    return resultado.affectedRows > 0;
   },
 };
 

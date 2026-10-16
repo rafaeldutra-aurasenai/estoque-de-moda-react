@@ -1,48 +1,113 @@
-import { pool } from '../config/db.js';
+import { pool } from "../config/db.js";
+
+const CAMPOS = `
+  id,
+  loja_id,
+  nome AS name,
+  contato,
+  telefone AS phone,
+  email,
+  endereco,
+  cidade,
+  observacoes AS notes,
+  criado_em
+`;
 
 const FornecedorRepository = {
-  async listar(termoBusca, executor = pool) {
-    let query = 'SELECT * FROM fornecedores';
-    const params = [];
+  async listar(lojaId, termoBusca = "", executor = pool) {
+    let sql = `
+      SELECT ${CAMPOS}
+      FROM fornecedores
+      WHERE loja_id = ?
+    `;
+    const params = [lojaId];
 
     if (termoBusca) {
-      query += ' WHERE name LIKE ? OR cat LIKE ? OR email LIKE ? OR cnpj LIKE ?';
+      sql += `
+        AND (
+          nome LIKE ?
+          OR contato LIKE ?
+          OR telefone LIKE ?
+          OR email LIKE ?
+          OR cidade LIKE ?
+        )
+      `;
+
       const termo = `%${termoBusca}%`;
-      params.push(termo, termo, termo, termo);
+      params.push(termo, termo, termo, termo, termo);
     }
 
-    query += ' ORDER BY name ASC';
+    sql += " ORDER BY nome ASC";
 
-    const [linhas] = await executor.query(query, params);
+    const [linhas] = await executor.query(sql, params);
     return linhas;
   },
 
-  async buscarPorId(id, executor = pool) {
-    const [linhas] = await executor.query('SELECT * FROM fornecedores WHERE id = ?', [id]);
+  async buscarPorId(id, lojaId, executor = pool) {
+    const [linhas] = await executor.query(
+      `SELECT ${CAMPOS}
+       FROM fornecedores
+       WHERE id = ? AND loja_id = ?
+       LIMIT 1`,
+      [id, lojaId]
+    );
+
     return linhas[0] ?? null;
   },
 
-  async criar(dados, executor = pool) {
-    const { name, cnpj, cat, phone, email, products, status } = dados;
-
+  async criar(dados, lojaId, executor = pool) {
     const [resultado] = await executor.query(
-      'INSERT INTO fornecedores (name, cnpj, cat, phone, email, products, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, cnpj || null, cat, phone || null, email || null, products || null, status || 'Ativo']
+      `INSERT INTO fornecedores
+         (loja_id, nome, contato, telefone, email, endereco, cidade, observacoes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        lojaId,
+        dados.name.trim(),
+        dados.contato || null,
+        dados.phone || null,
+        dados.email || null,
+        dados.endereco || null,
+        dados.cidade || null,
+        dados.notes || null,
+      ]
     );
+
     return resultado.insertId;
   },
 
-  async atualizar(id, dados, executor = pool) {
-    const { name, cnpj, cat, phone, email, products, status } = dados;
-
-    await executor.query(
-      'UPDATE fornecedores SET name=?, cnpj=?, cat=?, phone=?, email=?, products=?, status=? WHERE id=?',
-      [name, cnpj || null, cat, phone || null, email || null, products || null, status, id]
+  async atualizar(id, lojaId, dados, executor = pool) {
+    const [resultado] = await executor.query(
+      `UPDATE fornecedores
+       SET nome = ?,
+           contato = ?,
+           telefone = ?,
+           email = ?,
+           endereco = ?,
+           cidade = ?,
+           observacoes = ?
+       WHERE id = ? AND loja_id = ?`,
+      [
+        dados.name.trim(),
+        dados.contato || null,
+        dados.phone || null,
+        dados.email || null,
+        dados.endereco || null,
+        dados.cidade || null,
+        dados.notes || null,
+        id,
+        lojaId,
+      ]
     );
+
+    return resultado.affectedRows > 0;
   },
 
-  async remover(id, executor = pool) {
-    const [resultado] = await executor.query('DELETE FROM fornecedores WHERE id = ?', [id]);
+  async remover(id, lojaId, executor = pool) {
+    const [resultado] = await executor.query(
+      "DELETE FROM fornecedores WHERE id = ? AND loja_id = ?",
+      [id, lojaId]
+    );
+
     return resultado.affectedRows > 0;
   },
 };

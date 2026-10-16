@@ -1,110 +1,98 @@
+
 import ProdutoRepository from "../repositories/ProdutoRepository.js";
 
 const formatador = new Intl.NumberFormat("pt-BR", {
   style: "currency",
-  currency: "BRL"
+  currency: "BRL",
 });
 
 const formatadorData = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "short",
-  year: "numeric"
+  year: "numeric",
 });
 
 function converterArray(valor) {
-  if (Array.isArray(valor)) {
-    return valor;
+  if (Array.isArray(valor)) return valor;
+
+  if (typeof valor === "string") {
+    try {
+      const resultado = JSON.parse(valor);
+      return Array.isArray(resultado) ? resultado : [];
+    } catch {
+      return [];
+    }
   }
 
-  if (!valor) {
-    return [];
-  }
-
-  try {
-    const convertido = JSON.parse(valor);
-
-    return Array.isArray(convertido) ? convertido : [];
-  } catch {
-    return [];
-  }
+  return [];
 }
 
 function paraProduto(linha) {
   const estoque = Number(linha.stock) || 0;
   const estoqueMinimo = Number(linha.min_stock) || 0;
 
-  const status =
-    estoque === 0
-      ? "out"
-      : estoque <= estoqueMinimo
-        ? "low"
-        : "ok";
-
   return {
     sku: linha.sku,
     name: linha.name,
     cat: linha.cat,
-
     price: formatador.format(Number(linha.price) || 0),
     priceValue: Number(linha.price) || 0,
-
     stock: estoque,
     min: estoqueMinimo,
-    status,
-
+    status:
+      estoque === 0
+        ? "out"
+        : estoque <= estoqueMinimo
+          ? "low"
+          : "ok",
     emoji: linha.emoji || "👗",
     color: linha.color || "#EFEAE2",
-
     supplier: linha.supplier || "",
     location: linha.location || "",
-
     entry: linha.entry_date
-      ? formatadorData
-          .format(new Date(linha.entry_date))
-          .replace(".", "")
+      ? formatadorData.format(new Date(linha.entry_date)).replace(".", "")
       : "",
-
     colors: converterArray(linha.colors),
     sizes: converterArray(linha.sizes),
-
-    desc: linha.descricao || ""
+    desc: linha.descricao || "",
   };
 }
 
 const ProdutoService = {
-  async listarTodos() {
-    const linhas = await ProdutoRepository.listarTodos();
-
+  async listarTodos(lojaId) {
+    const linhas = await ProdutoRepository.listarTodos(lojaId);
     return linhas.map(paraProduto);
   },
 
-  async buscarPorSku(sku) {
-    const linha = await ProdutoRepository.buscarPorSku(sku);
-
+  async buscarPorSku(sku, lojaId) {
+    const linha = await ProdutoRepository.buscarPorSku(sku, lojaId);
     return linha ? paraProduto(linha) : null;
   },
 
-  async criar(dados) {
-    await ProdutoRepository.criar(dados);
-
-    return this.buscarPorSku(dados.sku);
+  async criar(dados, lojaId) {
+    await ProdutoRepository.criar(dados, lojaId);
+    return this.buscarPorSku(dados.sku, lojaId);
   },
 
-  async atualizar(sku, dados) {
-    const existente = await ProdutoRepository.buscarPorSku(sku);
+  async atualizar(sku, dados, lojaId) {
+    const existente = await ProdutoRepository.buscarPorSku(sku, lojaId);
 
-    if (!existente) {
-      return null;
-    }
+    if (!existente) return null;
 
-    await ProdutoRepository.atualizar(sku, dados);
+    const atualizado = await ProdutoRepository.atualizar(
+      sku,
+      lojaId,
+      dados
+    );
 
-    return this.buscarPorSku(sku);
+    if (!atualizado) return null;
+
+    return this.buscarPorSku(sku, lojaId);
   },
 
-  async remover(sku) {
-    return ProdutoRepository.remover(sku);
-  }
+  async remover(sku, lojaId) {
+    return ProdutoRepository.remover(sku, lojaId);
+  },
 };
 
 export default ProdutoService;

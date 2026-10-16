@@ -1,32 +1,42 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import multer from 'multer';
 
-const AQUI = path.dirname(fileURLToPath(import.meta.url));
+import multer from "multer";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
-// server/uploads — as imagens ficam no disco; no MySQL guardamos so o nome
-export const PASTA_UPLOADS = path.resolve(AQUI, '..', '..', 'uploads');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const PASTA_UPLOADS = path.resolve(__dirname, "../../uploads");
 
 fs.mkdirSync(PASTA_UPLOADS, { recursive: true });
 
-const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, PASTA_UPLOADS),
-  filename: (req, file, cb) => {
-    const extensao = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `usuario-${req.params.id}-${Date.now()}${extensao}`);
+  destination: (_req, _file, callback) => {
+    callback(null, PASTA_UPLOADS);
+  },
+
+  filename: (_req, file, callback) => {
+    const extensao = path.extname(file.originalname).toLowerCase();
+    const nome = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extensao}`;
+
+    callback(null, nome);
   },
 });
 
-export const uploadFoto = multer({
+const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
-  fileFilter: (req, file, cb) => {
-    if (!TIPOS_PERMITIDOS.includes(file.mimetype)) {
-      return cb(new Error('Formato invalido. Envie JPG, PNG, WEBP ou GIF.'));
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, callback) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return callback(new Error("Envie somente arquivos de imagem."));
     }
-    cb(null, true);
+
+    callback(null, true);
   },
 });
+
+export default upload;
+

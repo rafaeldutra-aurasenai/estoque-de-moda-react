@@ -1,46 +1,50 @@
-Config
-import ConfiguracaoRepository from '../repositories/ConfiguracaoRepository.js';
-import UsuarioRepository from '../repositories/UsuarioRepository.js';
+import ConfiguracaoRepository from "../repositories/ConfiguracaoRepository.js";
 
-// O banco guarda 0/1; a tela trabalha com true/false
 function paraTela(config) {
   if (!config) return null;
+
   return {
-    usuario_id: config.usuario_id,
+    loja_id: config.loja_id,
     nome_marca: config.nome_marca,
     alerta_estoque: Boolean(config.alerta_estoque),
     email_pedidos: Boolean(config.email_pedidos),
-    modo_escuro: Boolean(config.modo_escuro),
-    moeda: config.moeda,
   };
 }
 
 const ConfiguracaoService = {
-  async buscarPorUsuario(usuarioId) {
-    const usuario = await UsuarioRepository.buscarPorId(usuarioId);
-    if (!usuario) return null;
+  async buscarPorLoja(lojaId) {
+    let config = await ConfiguracaoRepository.buscarPorLoja(lojaId);
 
-    let config = await ConfiguracaoRepository.buscarPorUsuario(usuarioId);
     if (!config) {
-      await ConfiguracaoRepository.criarPadrao(usuarioId);
-      config = await ConfiguracaoRepository.buscarPorUsuario(usuarioId);
+      await ConfiguracaoRepository.criarPadrao(lojaId);
+      config = await ConfiguracaoRepository.buscarPorLoja(lojaId);
     }
+
     return paraTela(config);
   },
 
-  async atualizar(usuarioId, dados) {
-    const atual = await this.buscarPorUsuario(usuarioId);
+  async atualizar(lojaId, dados) {
+    const atual = await this.buscarPorLoja(lojaId);
     if (!atual) return null;
 
-    const mesclado = { ...atual, ...dados };
-    await ConfiguracaoRepository.atualizar(usuarioId, {
-      nome_marca: mesclado.nome_marca,
-      alerta_estoque: mesclado.alerta_estoque ? 1 : 0,
-      email_pedidos: mesclado.email_pedidos ? 1 : 0,
-      modo_escuro: mesclado.modo_escuro ? 1 : 0,
-      moeda: mesclado.moeda,
+    const nomeMarca =
+      typeof dados.nome_marca === "string" && dados.nome_marca.trim()
+        ? dados.nome_marca.trim()
+        : atual.nome_marca;
+
+    await ConfiguracaoRepository.atualizar(lojaId, {
+      nome_marca: nomeMarca,
+      alerta_estoque:
+        dados.alerta_estoque === undefined
+          ? atual.alerta_estoque
+          : Boolean(dados.alerta_estoque),
+      email_pedidos:
+        dados.email_pedidos === undefined
+          ? atual.email_pedidos
+          : Boolean(dados.email_pedidos),
     });
-    return this.buscarPorUsuario(usuarioId);
+
+    return this.buscarPorLoja(lojaId);
   },
 };
 

@@ -1,10 +1,9 @@
-Configurações
-import { Router } from 'express';
-import configuracoesController from '../controllers/configuracoesController.js';
+import { Router } from "express";
+import configuracoesController from "../controllers/configuracoesController.js";
 
 const router = Router();
 
-router.get('/:usuarioId', configuracoesController.buscar);
-router.put('/:usuarioId', configuracoesController.atualizar);
+router.get("/", configuracoesController.buscar);
+router.put("/", configuracoesController.atualizar);
 
 export default router;

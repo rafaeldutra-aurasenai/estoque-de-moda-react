@@ -1,61 +1,108 @@
-import UsuarioService from '../services/UsuarioService.js';
+import UsuarioService from "../services/UsuarioService.js";
 
 const usuariosController = {
-  // GET /api/usuarios/:id
   async buscarPorId(req, res) {
+    // O usuário só pode consultar o próprio perfil.
+    if (Number(req.params.id) !== Number(req.usuario.id)) {
+      return res.status(403).json({ error: "Acesso não permitido." });
+    }
+
     try {
-      const usuario = await UsuarioService.buscarPorId(req.params.id);
-      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(usuario);
+      const usuario = await UsuarioService.buscarPorId(
+        req.usuario.id,
+        req.usuario.loja_id
+      );
+
+      if (!usuario) {
+        return res.status(404).json({ error: "Usuário não encontrado." });
+      }
+
+      return res.json(usuario);
     } catch (erro) {
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao buscar usuário' });
+      return res.status(500).json({ error: "Erro ao buscar usuário." });
     }
   },
 
-  // PUT /api/usuarios/:id
   async atualizar(req, res) {
-    const { nome, email } = req.body;
-    if (!nome || !email) {
-      return res.status(400).json({ error: 'Preencha ao menos nome e e-mail' });
+    if (Number(req.params.id) !== Number(req.usuario.id)) {
+      return res.status(403).json({ error: "Acesso não permitido." });
     }
 
     try {
-      const usuario = await UsuarioService.atualizar(req.params.id, req.body);
-      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(usuario);
+      const usuario = await UsuarioService.atualizar(
+        req.usuario.id,
+        req.usuario.loja_id,
+        req.body
+      );
+
+      if (!usuario) {
+        return res.status(404).json({ error: "Usuário não encontrado." });
+      }
+
+      return res.json(usuario);
     } catch (erro) {
+      if (erro.codigo === "DADOS_INVALIDOS") {
+        return res.status(400).json({ error: erro.message });
+      }
+
+      if (erro.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ error: "Este e-mail já está cadastrado." });
+      }
+
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao atualizar usuário' });
+      return res.status(500).json({ error: "Erro ao atualizar usuário." });
     }
   },
 
-  // POST /api/usuarios/:id/foto (multipart/form-data, campo "foto")
   async enviarFoto(req, res) {
-    if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+    if (Number(req.params.id) !== Number(req.usuario.id)) {
+      return res.status(403).json({ error: "Acesso não permitido." });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhuma imagem enviada." });
+    }
 
     try {
-      const usuario = await UsuarioService.salvarFoto(req.params.id, req.file.filename);
-      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(usuario);
+      const usuario = await UsuarioService.salvarFoto(
+        req.usuario.id,
+        req.usuario.loja_id,
+        req.file.filename
+      );
+
+      if (!usuario) {
+        return res.status(404).json({ error: "Usuário não encontrado." });
+      }
+
+      return res.json(usuario);
     } catch (erro) {
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao salvar a foto' });
+      return res.status(500).json({ error: "Erro ao salvar a foto." });
     }
   },
 
-  // DELETE /api/usuarios/:id/foto
   async removerFoto(req, res) {
+    if (Number(req.params.id) !== Number(req.usuario.id)) {
+      return res.status(403).json({ error: "Acesso não permitido." });
+    }
+
     try {
-      const usuario = await UsuarioService.removerFoto(req.params.id);
-      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
-      res.json(usuario);
+      const usuario = await UsuarioService.removerFoto(
+        req.usuario.id,
+        req.usuario.loja_id
+      );
+
+      if (!usuario) {
+        return res.status(404).json({ error: "Usuário não encontrado." });
+      }
+
+      return res.json(usuario);
     } catch (erro) {
       console.error(erro);
-      res.status(500).json({ error: 'Erro ao remover a foto' });
+      return res.status(500).json({ error: "Erro ao remover a foto." });
     }
   },
 };
 
 export default usuariosController;
-

@@ -1,57 +1,91 @@
-Usuario
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import UsuarioRepository from '../repositories/UsuarioRepository.js';
-import { PASTA_UPLOADS } from '../config/upload.js';
+import fs from "node:fs/promises";
+import path from "node:path";
+import UsuarioRepository from "../repositories/UsuarioRepository.js";
+import { PASTA_UPLOADS } from "../config/upload.js";
 
-// Monta o campo extra fotoUrl (caminho publico servido pelo express.static)
 function comFotoUrl(usuario) {
   if (!usuario) return null;
-  return { ...usuario, fotoUrl: usuario.foto ? `/uploads/${usuario.foto}` : null };
+
+  return {
+    ...usuario,
+    fotoUrl: usuario.foto ? `/uploads/${usuario.foto}` : null,
+  };
 }
 
 async function apagarArquivo(nomeArquivo) {
   if (!nomeArquivo) return;
+
   try {
     await fs.unlink(path.join(PASTA_UPLOADS, nomeArquivo));
   } catch {
-    // arquivo ja nao existe: nada a fazer
+    // O arquivo pode já ter sido removido.
   }
 }
 
 const UsuarioService = {
-  async buscarPorId(id) {
-    return comFotoUrl(await UsuarioRepository.buscarPorId(id));
+  async buscarPorId(id, lojaId) {
+    return comFotoUrl(await UsuarioRepository.buscarPorId(id, lojaId));
   },
 
-  async atualizar(id, dados) {
-    const existente = await UsuarioRepository.buscarPorId(id);
+  async atualizar(id, lojaId, dados) {
+    const existente = await this.buscarPorId(id, lojaId);
     if (!existente) return null;
 
-    await UsuarioRepository.atualizar(id, { ...existente, ...dados });
-    return this.buscarPorId(id);
+    const nome = String(dados.nome || "").trim();
+    const email = String(dados.email || "").trim().toLowerCase();
+
+    if (!nome || !email) {
+      const erro = new Error("Informe nome e e-mail.");
+      erro.codigo = "DADOS_INVALIDOS";
+      throw erro;
+    }
+
+    const atualizado = await UsuarioRepository.atualizar(id, lojaId, {
+      ...existente,
+      ...dados,
+      nome,
+      email,
+    });
+
+    if (!atualizado) return null;
+
+    return this.buscarPorId(id, lojaId);
   },
 
-  // Troca a foto e remove do disco a imagem antiga
-  async salvarFoto(id, nomeArquivo) {
-    const existente = await UsuarioRepository.buscarPorId(id);
+  async salvarFoto(id, lojaId, nomeArquivo) {
+    const existente = await this.buscarPorId(id, lojaId);
+
     if (!existente) {
       await apagarArquivo(nomeArquivo);
       return null;
     }
 
-    await UsuarioRepository.atualizarFoto(id, nomeArquivo);
-    if (existente.foto !== nomeArquivo) await apagarArquivo(existente.foto);
-    return this.buscarPorId(id);
+    const atualizou = await UsuarioRepository.atualizarFoto(
+      id,
+      lojaId,
+      nomeArquivo
+    );
+
+    if (!atualizou) {
+      await apagarArquivo(nomeArquivo);
+      return null;
+    }
+
+    if (existente.foto !== nomeArquivo) {
+      await apagarArquivo(existente.foto);
+    }
+
+    return this.buscarPorId(id, lojaId);
   },
 
-  async removerFoto(id) {
-    const existente = await UsuarioRepository.buscarPorId(id);
+  async removerFoto(id, lojaId) {
+    const existente = await this.buscarPorId(id, lojaId);
     if (!existente) return null;
 
-    await UsuarioRepository.atualizarFoto(id, null);
+    await UsuarioRepository.atualizarFoto(id, lojaId, null);
     await apagarArquivo(existente.foto);
-    return this.buscarPorId(id);
+
+    return this.buscarPorId(id, lojaId);
   },
 };
 

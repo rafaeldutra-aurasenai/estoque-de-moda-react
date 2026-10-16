@@ -1,62 +1,123 @@
-import { pool } from '../config/db.js';
 
-// Toda função aceita um "executor" opcional (pool ou uma conexão de
-// transação). Por padrão usa o pool; quando um service precisa que
-// várias queries façam parte da mesma transação, ele passa a conexão.
+import { pool } from "../config/db.js";
+
 const ProdutoRepository = {
-  async listarTodos(executor = pool) {
-    const [linhas] = await executor.query('SELECT * FROM produtos ORDER BY criado_em DESC');
+  async listarTodos(lojaId, executor = pool) {
+    const [linhas] = await executor.query(
+      `SELECT * FROM produtos
+       WHERE loja_id = ?
+       ORDER BY criado_em DESC`,
+      [lojaId]
+    );
     return linhas;
   },
 
-  async buscarPorSku(sku, executor = pool) {
-    const [linhas] = await executor.query('SELECT * FROM produtos WHERE sku = ?', [sku]);
+  async buscarPorSku(sku, lojaId, executor = pool) {
+    const [linhas] = await executor.query(
+      `SELECT * FROM produtos
+       WHERE sku = ? AND loja_id = ?
+       LIMIT 1`,
+      [sku, lojaId]
+    );
     return linhas[0] ?? null;
   },
 
-  // Busca o estoque travando a linha (FOR UPDATE) — só faz sentido
-  // dentro de uma transação, por isso exige a conexão explicitamente.
-  async buscarEstoqueComLock(sku, conn) {
-    const [linhas] = await conn.query('SELECT stock FROM produtos WHERE sku = ? FOR UPDATE', [sku]);
+  async buscarEstoqueComLock(sku, lojaId, conn) {
+    const [linhas] = await conn.query(
+      `SELECT id, stock FROM produtos
+       WHERE sku = ? AND loja_id = ?
+       FOR UPDATE`,
+      [sku, lojaId]
+    );
     return linhas[0] ?? null;
   },
 
-  async criar(dados, executor = pool) {
+  async criar(dados, lojaId, executor = pool) {
     const {
-      sku, name, cat, price, stock, min, supplier, location, colors, sizes, desc, emoji, color,
+      sku, name, cat, price, stock, min,
+      supplier, location, colors, sizes, desc, emoji, color,
     } = dados;
 
     await executor.query(
-      `INSERT INTO produtos (sku, name, cat, price, stock, min_stock, emoji, color, supplier, location, entry_date, colors, sizes, descricao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?)`,
+      `INSERT INTO produtos
+       (loja_id, sku, name, cat, price, stock, min_stock,
+        emoji, color, supplier, location, entry_date,
+        colors, sizes, descricao)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, ?)`,
       [
-        sku, name, cat, price || 0, stock || 0, min || 0, emoji || '👗', color || '#EFEAE2',
-        supplier || null, location || null, JSON.stringify(colors || []), JSON.stringify(sizes || []), desc || null,
+        lojaId,
+        sku,
+        name,
+        cat,
+        Number(price) || 0,
+        Number(stock) || 0,
+        Number(min) || 0,
+        emoji || "👗",
+        color || "#EFEAE2",
+        supplier || null,
+        location || null,
+        JSON.stringify(colors || []),
+        JSON.stringify(sizes || []),
+        desc || null,
       ]
     );
   },
 
-  async atualizar(sku, dados, executor = pool) {
-    const { name, cat, price, stock, min, supplier, location, colors, sizes, desc } = dados;
+  async atualizar(sku, lojaId, dados, executor = pool) {
+    const {
+      name, cat, price, stock, min,
+      supplier, location, colors, sizes, desc,
+    } = dados;
 
-    await executor.query(
-      `UPDATE produtos SET name=?, cat=?, price=?, stock=?, min_stock=?, supplier=?, location=?, colors=?, sizes=?, descricao=?
-       WHERE sku=?`,
-      [name, cat, price, stock, min, supplier, location, JSON.stringify(colors || []), JSON.stringify(sizes || []), desc, sku]
+    const [resultado] = await executor.query(
+      `UPDATE produtos
+       SET name = ?, cat = ?, price = ?, stock = ?,
+           min_stock = ?, supplier = ?, location = ?,
+           colors = ?, sizes = ?, descricao = ?
+       WHERE sku = ? AND loja_id = ?`,
+      [
+        name,
+        cat,
+        Number(price) || 0,
+        Number(stock) || 0,
+        Number(min) || 0,
+        supplier || null,
+        location || null,
+        JSON.stringify(colors || []),
+        JSON.stringify(sizes || []),
+        desc || null,
+        sku,
+        lojaId,
+      ]
     );
+
+    return resultado.affectedRows > 0;
   },
 
-  async atualizarEstoque(sku, novoEstoque, executor = pool) {
-    await executor.query('UPDATE produtos SET stock = ? WHERE sku = ?', [novoEstoque, sku]);
+  async atualizarEstoque(sku, lojaId, novoEstoque, executor = pool) {
+    const [resultado] = await executor.query(
+      `UPDATE produtos SET stock = ?
+       WHERE sku = ? AND loja_id = ?`,
+      [novoEstoque, sku, lojaId]
+    );
+    return resultado.affectedRows > 0;
   },
 
-  // Soma (ou subtrai, com delta negativo) uma quantidade ao estoque atual
-  async ajustarEstoque(sku, delta, executor = pool) {
-    await executor.query('UPDATE produtos SET stock = stock + ? WHERE sku = ?', [delta, sku]);
+  async ajustarEstoque(sku, lojaId, delta, executor = pool) {
+    const [resultado] = await executor.query(
+      `UPDATE produtos SET stock = stock + ?
+       WHERE sku = ? AND loja_id = ?`,
+      [delta, sku, lojaId]
+    );
+    return resultado.affectedRows > 0;
   },
 
-  async remover(sku, executor = pool) {
-    const [resultado] = await executor.query('DELETE FROM produtos WHERE sku = ?', [sku]);
+  async remover(sku, lojaId, executor = pool) {
+    const [resultado] = await executor.query(
+      `DELETE FROM produtos
+       WHERE sku = ? AND loja_id = ?`,
+      [sku, lojaId]
+    );
     return resultado.affectedRows > 0;
   },
 };
