@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { criarProduto } from "../api.js";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
+import { emojiDaCategoria } from "../utils/categoryEmoji.js";
 
 const CATEGORIAS = [
   "Vestidos",
@@ -57,7 +58,6 @@ export default function ProductForm() {
   usePageHeader("catálogo / produtos / novo", "Novo produto");
 
   const navigate = useNavigate();
-
   const [form, setForm] = useState(vazio);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -193,10 +193,32 @@ export default function ProductForm() {
             >
               {CATEGORIAS.map((categoria) => (
                 <option key={categoria} value={categoria}>
-                  {categoria}
+                  {emojiDaCategoria(categoria)} {categoria}
                 </option>
               ))}
             </select>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginTop: 10,
+                padding: 12,
+                borderRadius: 8,
+                background: "var(--accent-soft, #f4eee5)",
+              }}
+            >
+              <span style={{ fontSize: 30 }}>
+                {emojiDaCategoria(form.cat)}
+              </span>
+              <div>
+                <strong>{form.cat}</strong>
+                <div style={{ fontSize: 12, opacity: 0.7 }}>
+                  Ícone automático da categoria
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="field">

@@ -79,6 +79,11 @@ return ( <Routes>
       />
 
       <Route
+        path="produtos/:sku/editar"
+        element={<ProductForm />}
+      />
+
+      <Route
         path="produtos/:sku"
         element={<ProductDetail />}
       />

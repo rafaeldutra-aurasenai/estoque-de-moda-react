@@ -51,15 +51,15 @@ export default function Login() {
             <p>Gerencie peças, cores, tamanhos, fornecedores e movimentações de estoque em um só lugar — para você cuidar do que sua marca faz de melhor.</p>
             <div className="login-tags"><span>Controle de estoque</span><span>Entradas e saídas</span><span>Visão do negócio</span></div>
           </div>
-          <div className="login-art-footer">FEITO PARA QUEM VIVE A MODA <span>EST. • MODA</span></div>
+          <div className="login-art-footer">FEITO PARA QUEM VIVE A MODA <span>GPone• MODA</span></div>
         </aside>
 
         <div className="auth-form-wrap login-form-wrap">
           <form className="auth-form login-form" onSubmit={handleSubmit}>
             <div className="login-mobile-brand"><span className="brand-symbol">✳</span> Estoque de Moda</div>
-            <div className="eyebrow">BEM-VINDO DE VOLTA</div>
+            <div className="eyebrow">BEM-VINDO</div>
             <h2>Entre na sua conta</h2>
-            <p className="sub">Acesse seu espaço de gestão e continue de onde parou.</p>
+            <p className="sub">Acesse seu espaço de gestão.</p>
 
             <div className="field">
               <label htmlFor="email">E-mail</label>
