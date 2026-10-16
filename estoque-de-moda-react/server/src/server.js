@@ -1,5 +1,6 @@
 
 import express from "express";
+import { PASTA_UPLOADS } from "./config/upload.js";
 import cors from "cors";
 import "dotenv/config";
 
@@ -26,6 +27,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/uploads", express.static(PASTA_UPLOADS));
 
 app.get("/api/health", async (req, res) => {
   try {

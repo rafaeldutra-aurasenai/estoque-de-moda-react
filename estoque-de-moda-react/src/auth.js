@@ -22,6 +22,12 @@ localStorage.setItem(TOKEN_KEY, token);
 localStorage.setItem(USER_KEY, JSON.stringify(usuario));
 }
 
+export function atualizarUsuario(usuario) {
+  if (!usuario) return;
+  localStorage.setItem(USER_KEY, JSON.stringify(usuario));
+  window.dispatchEvent(new Event("sessao-atualizada"));
+}
+
 export function limparSessao() {
 localStorage.removeItem(TOKEN_KEY);
 localStorage.removeItem(USER_KEY);
