@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Tag from "../components/Tag.jsx";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
+import { apiFetch } from "../auth.js";
 
 const API_URL = "http://localhost:3001/api/fornecedores";
 
@@ -21,7 +22,7 @@ export default function Suppliers() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(API_URL, { signal: controller.signal });
+        const res = await apiFetch(API_URL, { signal: controller.signal });
         if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
         const data = await res.json();
         setSuppliers(data);

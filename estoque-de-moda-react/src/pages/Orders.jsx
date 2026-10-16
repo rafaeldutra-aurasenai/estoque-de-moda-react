@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Tag from "../components/Tag.jsx";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
+import { apiFetch } from "../auth.js";
 
 const API_URL = "http://localhost:3001/api/pedidos";
 const filters = ["Todos", "Pendentes", "Enviados", "Entregues", "Cancelados"];
@@ -22,7 +23,7 @@ export default function Orders() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(API_URL, { signal: controller.signal });
+        const res = await apiFetch(API_URL, { signal: controller.signal });
         if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
         setOrders(await res.json());
       } catch (err) {

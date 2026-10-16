@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
+import { apiFetch } from "../auth.js";
 
 const PEDIDOS_URL = "http://localhost:3001/api/pedidos";
 const PRODUTOS_URL = "http://localhost:3001/api/produtos";
@@ -19,10 +20,26 @@ export default function OrderForm() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(PRODUTOS_URL)
-      .then((res) => res.json())
-      .then(setProducts)
-      .catch(() => setError("Não foi possível carregar os produtos"));
+    const controller = new AbortController();
+
+    async function carregarProdutos() {
+      try {
+        const res = await apiFetch(PRODUTOS_URL, { signal: controller.signal });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.erro || data.message || `Erro ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        setProducts(Array.isArray(data) ? data : (data.produtos || data.data || []));
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setError(err.message || "Não foi possível carregar os produtos");
+        }
+      }
+    }
+
+    carregarProdutos();
+    return () => controller.abort();
   }, []);
 
   function updateItem(id, field, value) {
@@ -67,7 +84,7 @@ export default function OrderForm() {
 
     setSaving(true);
     try {
-      const res = await fetch(PEDIDOS_URL, {
+      const res = await apiFetch(PEDIDOS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,7 +96,7 @@ export default function OrderForm() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.erro || "Erro ao criar pedido");
+      if (!res.ok) throw new Error(data.erro || data.message || `Erro ${res.status}: ${res.statusText}`);
 
       navigate(`/app/pedidos/${data.id}`);
     } catch (err) {
