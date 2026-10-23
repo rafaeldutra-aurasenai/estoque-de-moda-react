@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { criarProduto } from "../api.js";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
@@ -42,6 +41,24 @@ const CATEGORIAS = [
   "Outros",
 ];
 
+// Função utilitária para extrair o prefixo (ex: "Camisas" -> "CAM")
+function getPrefixoCategoria(categoria) {
+  return (categoria || "PROD")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z]/g, "")
+    .substring(0, 3)
+    .toUpperCase();
+}
+
+// Gera um SKU automático único baseado na categoria
+function criarSkuAutomatico(categoria) {
+  const pref = getPrefixoCategoria(categoria);
+  const tempoDiferencial = (Date.now() % 1000).toString().padStart(3, "0");
+  const numeroAleatorio = Math.floor(100 + Math.random() * 900);
+  return `${pref}-${tempoDiferencial}${numeroAleatorio}`;
+}
+
 const vazio = {
   sku: "",
   name: "",
@@ -62,13 +79,27 @@ export default function ProductForm() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
+  // Gera o SKU automático inicial assim que o formulário abre
+  useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      sku: criarSkuAutomatico(f.cat),
+    }));
+  }, []);
+
   function handleChange(e) {
     const { name, value } = e.target;
 
-    setForm((f) => ({
-      ...f,
-      [name]: value,
-    }));
+    setForm((f) => {
+      const novoForm = { ...f, [name]: value };
+
+      // Sempre que a pessoa mudar a Categoria, gera automaticamente o novo SKU
+      if (name === "cat") {
+        novoForm.sku = criarSkuAutomatico(value);
+      }
+
+      return novoForm;
+    });
   }
 
   async function handleSave(e) {
@@ -89,29 +120,18 @@ export default function ProductForm() {
     const estoque = Number(form.stock);
     const minimo = Number(form.min);
 
-    if (
-      form.price !== "" &&
-      (!Number.isFinite(preco) || preco < 0)
-    ) {
+    if (form.price !== "" && (!Number.isFinite(preco) || preco < 0)) {
       setErro("Informe um preço válido e não negativo.");
       return;
     }
 
-    if (
-      form.stock !== "" &&
-      (!Number.isInteger(estoque) || estoque < 0)
-    ) {
+    if (form.stock !== "" && (!Number.isInteger(estoque) || estoque < 0)) {
       setErro("O estoque deve ser um número inteiro não negativo.");
       return;
     }
 
-    if (
-      form.min !== "" &&
-      (!Number.isInteger(minimo) || minimo < 0)
-    ) {
-      setErro(
-        "O estoque mínimo deve ser um número inteiro não negativo."
-      );
+    if (form.min !== "" && (!Number.isInteger(minimo) || minimo < 0)) {
+      setErro("O estoque mínimo deve ser um número inteiro não negativo.");
       return;
     }
 
@@ -136,13 +156,11 @@ export default function ProductForm() {
           .filter(Boolean),
       });
 
-      navigate(
-        `/app/produtos/${encodeURIComponent(form.sku.trim())}`
-      );
+      navigate(`/app/produtos/${encodeURIComponent(form.sku.trim())}`);
     } catch (e) {
       setErro(
         e.message ||
-        "Erro ao salvar. Confira se o backend está rodando e se o SKU já existe."
+          "Erro ao salvar. Confira se o backend está rodando e se o SKU já existe."
       );
     } finally {
       setSalvando(false);
@@ -175,7 +193,7 @@ export default function ProductForm() {
             name="name"
             value={form.name}
             onChange={handleChange}
-            placeholder="Ex.: Vestido midi floral"
+            placeholder="Ex.: Camisa Polo Azul"
             required
           />
         </div>
@@ -215,23 +233,26 @@ export default function ProductForm() {
               <div>
                 <strong>{form.cat}</strong>
                 <div style={{ fontSize: 12, opacity: 0.7 }}>
-                  Ícone automático da categoria
+                  SKU gerado automaticamente
                 </div>
               </div>
             </div>
           </div>
 
           <div className="field">
-            <label htmlFor="product-sku">SKU</label>
+            <label htmlFor="product-sku">SKU (Gerado Automaticamente)</label>
             <input
               id="product-sku"
               className="mono"
               name="sku"
               value={form.sku}
               onChange={handleChange}
-              placeholder="EX-0001-XX"
+              placeholder="Aguardando categoria..."
               required
             />
+            <span style={{ fontSize: 11, color: "#666", marginTop: 4, display: "block" }}>
+              ✨ Atualizado automaticamente ao selecionar a categoria. Você também pode alterar manualmente se desejar.
+            </span>
           </div>
         </div>
 
@@ -267,9 +288,7 @@ export default function ProductForm() {
           </div>
 
           <div className="field">
-            <label htmlFor="product-stock">
-              Quantidade em estoque
-            </label>
+            <label htmlFor="product-stock">Quantidade em estoque</label>
             <input
               id="product-stock"
               type="number"
