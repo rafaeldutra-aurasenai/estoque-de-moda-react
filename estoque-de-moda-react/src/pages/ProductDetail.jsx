@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { buscarProduto } from "../api.js";
+import { buscarProduto, excluirProduto } from "../api.js";
 import Tag from "../components/Tag.jsx";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
 import { emojiDaCategoria } from "../utils/categoryEmoji.js";
@@ -12,11 +11,11 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
   const [activeSize, setActiveSize] = useState(0);
 
   useEffect(() => {
     let ativo = true;
-
     setCarregando(true);
 
     buscarProduto(sku)
@@ -40,18 +39,34 @@ export default function ProductDetail() {
     product ? product.name : "Produto não encontrado"
   );
 
-  if (carregando) return <p>Carregando...</p>;
+  // Função para confirmar e excluir o produto
+  async function handleExcluir() {
+    const confirmou = window.confirm(
+      `Tem certeza que deseja excluir o produto "${product.name}" (SKU: ${product.sku})?\n\nEsta ação não poderá ser desfeita.`
+    );
+
+    if (!confirmou) return;
+
+    setExcluindo(true);
+
+    try {
+      await excluirProduto(product.sku);
+      navigate("/app/produtos");
+    } catch (e) {
+      alert(e.message || "Erro ao excluir o produto.");
+      setExcluindo(false);
+    }
+  }
+
+  if (carregando) return <p style={{ padding: 20 }}>Carregando produto...</p>;
 
   if (!product) {
     return (
-      <div>
+      <div style={{ padding: 20 }}>
         <p>Produto não encontrado.</p>
         <Link
           to="/app/produtos"
-          style={{
-            color: "var(--accent)",
-            fontWeight: 600,
-          }}
+          style={{ color: "var(--accent)", fontWeight: 600 }}
         >
           ← Voltar para produtos
         </Link>
@@ -83,21 +98,9 @@ export default function ProductDetail() {
         <div>
           <div
             className="gallery-main"
-            style={{ background: product.color }}
+            style={{ background: product.color || "#EFEAE2" }}
           >
             <span style={{ fontSize: 80 }}>{emoji}</span>
-          </div>
-
-          <div className="gallery-thumbs">
-            <div
-              className="active"
-              style={{ background: product.color }}
-            >
-              {emoji}
-            </div>
-            <div style={{ background: "#EFEAE2" }}>{emoji}</div>
-            <div style={{ background: "#EFEAE2" }}>{emoji}</div>
-            <div style={{ background: "#EFEAE2" }}>{emoji}</div>
           </div>
         </div>
 
@@ -150,64 +153,57 @@ export default function ProductDetail() {
               lineHeight: 1.5,
             }}
           >
-            {product.desc}
+            {product.desc || "Sem descrição registrada."}
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                marginBottom: 8,
-              }}
-            >
-              Cor
+          {/* CORES */}
+          {product.colors?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>
+                Cores disponíveis
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {product.colors.map((c, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: "4px 10px",
+                      background: "#eee",
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
             </div>
+          )}
 
-            <div className="variant-swatches">
-              {(product.colors || []).map((c, i) => (
-                <div
-                  className="swatch"
-                  key={i}
-                  style={{ background: c }}
-                />
-              ))}
+          {/* TAMANHOS */}
+          {product.sizes?.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>
+                Tamanhos
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {product.sizes.map((s, idx) => (
+                  <div
+                    key={s}
+                    className={
+                      "size-pill" + (idx === activeSize ? " active" : "")
+                    }
+                    onClick={() => setActiveSize(idx)}
+                  >
+                    {s}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div style={{ marginBottom: 20 }}>
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                marginBottom: 8,
-              }}
-            >
-              Tamanho
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
-              {(product.sizes || []).map((s, idx) => (
-                <div
-                  key={s}
-                  className={
-                    "size-pill" +
-                    (idx === activeSize ? " active" : "")
-                  }
-                  onClick={() => setActiveSize(idx)}
-                >
-                  {s}
-                </div>
-              ))}
-            </div>
-          </div>
-
+          {/* INFORMAÇÕES DE ESTOQUE */}
           <div className="card" style={{ padding: "16px 20px" }}>
-            <div className="kv-row">
-              <span>Fornecedor</span>
-              <span>{product.supplier || "Não informado"}</span>
-            </div>
-
             <div className="kv-row">
               <span>Estoque total</span>
               <span>{product.stock} peças</span>
@@ -217,30 +213,27 @@ export default function ProductDetail() {
               <span>Estoque mínimo</span>
               <span>{product.min} peças</span>
             </div>
-
-            <div className="kv-row">
-              <span>Localização</span>
-              <span>{product.location || "Não informada"}</span>
-            </div>
-
-            <div className="kv-row">
-              <span>Última entrada</span>
-              <span>{product.entry || "Não informada"}</span>
-            </div>
           </div>
 
+          {/* BOTÕES DE AÇÃO */}
           <div
             className="form-actions"
             style={{
               justifyContent: "flex-start",
-              marginTop: 18,
+              marginTop: 20,
+              gap: 10,
             }}
           >
             <button
-              className="btn btn-primary btn-sm"
-              onClick={() => navigate("/app/produtos/novo")}
+              className="btn btn-ghost btn-sm"
+              onClick={handleExcluir}
+              disabled={excluindo}
+              style={{
+                color: "#c81e1e",
+                borderColor: "#f8b4b4",
+              }}
             >
-              Editar produto
+              {excluindo ? "Excluindo..." : "🗑️ Excluir produto"}
             </button>
 
             <button
