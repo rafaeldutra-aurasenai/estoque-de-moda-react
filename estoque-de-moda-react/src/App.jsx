@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login.jsx";
@@ -17,6 +18,7 @@ import Categories from "./pages/Categories.jsx";
 import Movements from "./pages/Movements.jsx";
 import Suppliers from "./pages/Suppliers.jsx";
 import SupplierForm from "./pages/SupplierForm.jsx";
+import SupplierDetail from "./pages/SupplierDetails.jsx";
 import Orders from "./pages/Orders.jsx";
 import OrderDetail from "./pages/OrderDetail.jsx";
 import Reports from "./pages/Reports.jsx";
@@ -25,142 +27,60 @@ import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
 
 export default function App() {
-return ( <Routes>
+  return (
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot" element={<Forgot />} />
 
-
-  {/* PUBLICO */}
-  <Route
-    path="/"
-    element={<Login />}
-  />
-
-  <Route
-    path="/signup"
-    element={<Signup />}
-  />
-
-  <Route
-    path="/forgot"
-    element={<Forgot />}
-  />
-
-
-  {/* PROTEGIDO POR JWT */}
-  <Route element={<ProtectedRoute />}>
-
-    <Route
-      path="/app"
-      element={<AppLayout />}
-    >
-
-      <Route
-        index
-        element={
-          <Navigate
-            to="dashboard"
-            replace
+      <Route element={<ProtectedRoute />}>
+        <Route path="/app" element={<AppLayout />}>
+          <Route
+            index
+            element={<Navigate to="dashboard" replace />}
           />
-        }
-      />
 
-      <Route
-        path="dashboard"
-        element={<Dashboard />}
-      />
+          <Route path="dashboard" element={<Dashboard />} />
 
-      <Route
-        path="produtos"
-        element={<Products />}
-      />
+          <Route path="produtos" element={<Products />} />
+          <Route path="produtos/novo" element={<ProductForm />} />
+          <Route
+            path="produtos/:sku/editar"
+            element={<ProductForm />}
+          />
+          <Route
+            path="produtos/:sku"
+            element={<ProductDetail />}
+          />
 
-      <Route
-        path="produtos/novo"
-        element={<ProductForm />}
-      />
+          <Route path="categorias" element={<Categories />} />
+          <Route path="movimentacoes" element={<Movements />} />
 
-      <Route
-        path="produtos/:sku/editar"
-        element={<ProductForm />}
-      />
+          <Route path="fornecedores" element={<Suppliers />} />
+          <Route
+            path="fornecedores/novo"
+            element={<SupplierForm />}
+          />
+          <Route
+            path="fornecedores/:id"
+            element={<SupplierDetail />}
+          />
 
-      <Route
-        path="produtos/:sku"
-        element={<ProductDetail />}
-      />
+          <Route path="pedidos" element={<Orders />} />
+          <Route path="pedidos/novo" element={<OrderForm />} />
+          <Route path="pedidos/:id" element={<OrderDetail />} />
 
-      <Route
-        path="categorias"
-        element={<Categories />}
-      />
+          <Route path="relatorios" element={<Reports />} />
+          <Route
+            path="notificacoes"
+            element={<Notifications />}
+          />
+          <Route path="perfil" element={<Profile />} />
+          <Route path="configuracoes" element={<Settings />} />
+        </Route>
+      </Route>
 
-      <Route
-        path="movimentacoes"
-        element={<Movements />}
-      />
-
-      <Route
-        path="fornecedores"
-        element={<Suppliers />}
-      />
-
-      <Route
-        path="fornecedores/novo"
-        element={<SupplierForm />}
-      />
-
-      <Route
-        path="pedidos"
-        element={<Orders />}
-      />
-
-      <Route
-        path="pedidos/novo"
-        element={<OrderForm />}
-      />
-
-      <Route
-        path="pedidos/:id"
-        element={<OrderDetail />}
-      />
-
-      <Route
-        path="relatorios"
-        element={<Reports />}
-      />
-
-      <Route
-        path="notificacoes"
-        element={<Notifications />}
-      />
-
-      <Route
-        path="perfil"
-        element={<Profile />}
-      />
-
-      <Route
-        path="configuracoes"
-        element={<Settings />}
-      />
-
-    </Route>
-
-  </Route>
-
-
-  {/* QUALQUER ROTA DESCONHECIDA */}
-  <Route
-    path="*"
-    element={
-      <Navigate
-        to="/"
-        replace
-      />
-    }
-  />
-
-</Routes>
-
-
-);
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }

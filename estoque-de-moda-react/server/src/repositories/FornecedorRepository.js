@@ -1,9 +1,14 @@
+
 import { pool } from "../config/db.js";
 
 const CAMPOS = `
   id,
   loja_id,
   nome AS name,
+  cnpj,
+  categoria AS cat,
+  produtos_fornecidos AS products,
+  status,
   contato,
   telefone AS phone,
   email,
@@ -20,21 +25,32 @@ const FornecedorRepository = {
       FROM fornecedores
       WHERE loja_id = ?
     `;
+
     const params = [lojaId];
 
     if (termoBusca) {
       sql += `
         AND (
           nome LIKE ?
+          OR cnpj LIKE ?
           OR contato LIKE ?
           OR telefone LIKE ?
           OR email LIKE ?
-          OR cidade LIKE ?
+          OR categoria LIKE ?
+          OR produtos_fornecidos LIKE ?
         )
       `;
 
       const termo = `%${termoBusca}%`;
-      params.push(termo, termo, termo, termo, termo);
+      params.push(
+        termo,
+        termo,
+        termo,
+        termo,
+        termo,
+        termo,
+        termo
+      );
     }
 
     sql += " ORDER BY nome ASC";
@@ -57,12 +73,27 @@ const FornecedorRepository = {
 
   async criar(dados, lojaId, executor = pool) {
     const [resultado] = await executor.query(
-      `INSERT INTO fornecedores
-         (loja_id, nome, contato, telefone, email, endereco, cidade, observacoes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO fornecedores (
+        loja_id,
+        nome,
+        cnpj,
+        categoria,
+        produtos_fornecidos,
+        status,
+        contato,
+        telefone,
+        email,
+        endereco,
+        cidade,
+        observacoes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         lojaId,
         dados.name.trim(),
+        dados.cnpj || null,
+        dados.cat || null,
+        dados.products || null,
+        dados.status || "Ativo",
         dados.contato || null,
         dados.phone || null,
         dados.email || null,
@@ -79,6 +110,10 @@ const FornecedorRepository = {
     const [resultado] = await executor.query(
       `UPDATE fornecedores
        SET nome = ?,
+           cnpj = ?,
+           categoria = ?,
+           produtos_fornecidos = ?,
+           status = ?,
            contato = ?,
            telefone = ?,
            email = ?,
@@ -88,6 +123,10 @@ const FornecedorRepository = {
        WHERE id = ? AND loja_id = ?`,
       [
         dados.name.trim(),
+        dados.cnpj || null,
+        dados.cat || null,
+        dados.products || null,
+        dados.status || "Ativo",
         dados.contato || null,
         dados.phone || null,
         dados.email || null,
@@ -104,7 +143,8 @@ const FornecedorRepository = {
 
   async remover(id, lojaId, executor = pool) {
     const [resultado] = await executor.query(
-      "DELETE FROM fornecedores WHERE id = ? AND loja_id = ?",
+      `DELETE FROM fornecedores
+       WHERE id = ? AND loja_id = ?`,
       [id, lojaId]
     );
 
