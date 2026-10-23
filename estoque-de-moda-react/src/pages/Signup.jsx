@@ -76,7 +76,15 @@ export default function Signup() {
   return (
     <section>
       <div className="auth-shell">
-        <div className="auth-art">
+        <div
+          className="auth-art"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(75, 25, 35, 0.15), rgba(75, 25, 35, 0.30)), url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=85')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
           <div className="brand-mark">ESTOQUE DE MODA</div>
 
           <div className="pitch">
