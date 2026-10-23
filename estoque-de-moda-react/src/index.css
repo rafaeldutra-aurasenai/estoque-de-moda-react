@@ -279,3 +279,81 @@ tbody tr:hover{ background:#FBF9F5; }
 .pg-btns{ display:flex; gap:6px; }
 .pg-btns button{ width:32px; height:32px; border-radius:7px; border:1px solid var(--line); background:var(--surface); font-size:13px; }
 .pg-btns button.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+
+/* ==========================================================
+   ANIMACOES SUAVES - compatíveis com os componentes existentes
+   Não alteram dimensões, cores ou funcionamento dos controles.
+   ========================================================== */
+@keyframes estoque-entrada {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Entrada discreta dos cartões já usados nas páginas */
+.pcard,
+.cat-tile,
+.stat-card,
+.form-card,
+.content > .card {
+  animation: estoque-entrada 280ms ease-out both;
+}
+
+/* Interação dos cards de produto e categoria */
+.pcard,
+.cat-tile {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.pcard:hover,
+.cat-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(35, 32, 29, 0.08);
+  border-color: var(--line);
+}
+
+/* Botões: mantém as cores e os estados já definidos no CSS original */
+.btn,
+.icon-btn,
+.filter-pill,
+.view-toggle button,
+.pg-btns button,
+.size-pill,
+.tab-btn {
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease, transform 160ms ease;
+}
+
+.btn:hover:not(:disabled),
+.icon-btn:hover,
+.pg-btns button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled),
+.icon-btn:active,
+.pg-btns button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Realce de foco acessível sem remover o contorno do navegador por completo */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respeita quem prefere movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
