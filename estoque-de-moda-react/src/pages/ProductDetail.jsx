@@ -5,6 +5,23 @@ import Tag from "../components/Tag.jsx";
 import { usePageHeader } from "../components/PageHeaderContext.jsx";
 import { emojiDaCategoria } from "../utils/categoryEmoji.js";
 
+function extrairDescricaoEExtra(descricaoBruta) {
+  if (!descricaoBruta) return { desc: "", imageUrl: "", costPrice: "" };
+  try {
+    const parsed = JSON.parse(descricaoBruta);
+    if (parsed && typeof parsed === "object" && parsed.__meta) {
+      return {
+        desc: parsed.desc || "",
+        imageUrl: parsed.imageUrl || "",
+        costPrice: parsed.costPrice !== undefined ? parsed.costPrice : "",
+      };
+    }
+  } catch {
+    // É uma descrição antiga
+  }
+  return { desc: descricaoBruta, imageUrl: "", costPrice: "" };
+}
+
 export default function ProductDetail() {
   const { sku } = useParams();
   const navigate = useNavigate();
@@ -39,10 +56,9 @@ export default function ProductDetail() {
     product ? product.name : "Produto não encontrado"
   );
 
-  // Função para confirmar e excluir o produto
   async function handleExcluir() {
     const confirmou = window.confirm(
-      `Tem certeza que deseja excluir o produto "${product.name}" (SKU: ${product.sku})?\n\nEsta ação não poderá ser desfeita.`
+      `Tem a certeza de que deseja eliminar o produto "${product.name}" (SKU: ${product.sku})?\n\nEsta ação não poderá ser desfeita.`
     );
 
     if (!confirmou) return;
@@ -53,12 +69,12 @@ export default function ProductDetail() {
       await excluirProduto(product.sku);
       navigate("/app/produtos");
     } catch (e) {
-      alert(e.message || "Erro ao excluir o produto.");
+      alert(e.message || "Erro ao eliminar o produto.");
       setExcluindo(false);
     }
   }
 
-  if (carregando) return <p style={{ padding: 20 }}>Carregando produto...</p>;
+  if (carregando) return <p style={{ padding: 20 }}>A carregar produto...</p>;
 
   if (!product) {
     return (
@@ -74,7 +90,13 @@ export default function ProductDetail() {
     );
   }
 
+  const extra = extrairDescricaoEExtra(product.desc);
   const emoji = emojiDaCategoria(product.cat);
+
+  const precoVenda = product.priceValue || 0;
+  const precoCusto = Number(extra.costPrice) || 0;
+  const lucroBruto = precoVenda - precoCusto;
+  const margemLucro = precoVenda > 0 ? ((lucroBruto / precoVenda) * 100).toFixed(1) : 0;
 
   return (
     <div>
@@ -98,9 +120,23 @@ export default function ProductDetail() {
         <div>
           <div
             className="gallery-main"
-            style={{ background: product.color || "#EFEAE2" }}
+            style={{
+              background: product.color || "#EFEAE2",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
           >
-            <span style={{ fontSize: 80 }}>{emoji}</span>
+            {extra.imageUrl ? (
+              <img
+                src={extra.imageUrl}
+                alt={product.name}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <span style={{ fontSize: 80 }}>{emoji}</span>
+            )}
           </div>
         </div>
 
@@ -153,7 +189,7 @@ export default function ProductDetail() {
               lineHeight: 1.5,
             }}
           >
-            {product.desc || "Sem descrição registrada."}
+            {extra.desc || "Sem descrição registada."}
           </div>
 
           {/* CORES */}
@@ -202,20 +238,35 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* INFORMAÇÕES DE ESTOQUE */}
+          {/* INFORMAÇÕES DE ESTOQUE E MARGEM */}
           <div className="card" style={{ padding: "16px 20px" }}>
             <div className="kv-row">
-              <span>Estoque total</span>
+              <span>Stock total</span>
               <span>{product.stock} peças</span>
             </div>
 
             <div className="kv-row">
-              <span>Estoque mínimo</span>
+              <span>Stock mínimo</span>
               <span>{product.min} peças</span>
             </div>
+
+            {extra.costPrice !== "" && (
+              <>
+                <div className="kv-row">
+                  <span>Preço de Custo</span>
+                  <span>R$ {precoCusto.toFixed(2)}</span>
+                </div>
+                <div className="kv-row">
+                  <span>Margem de Lucro</span>
+                  <span style={{ color: margemLucro < 0 ? "#c81e1e" : "#15803d", fontWeight: 600 }}>
+                    {margemLucro}% (R$ {lucroBruto.toFixed(2)})
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* BOTÕES DE AÇÃO */}
+          {/* AÇÕES DE NAVEGAÇÃO E MANIPULAÇÃO */}
           <div
             className="form-actions"
             style={{
@@ -225,6 +276,17 @@ export default function ProductDetail() {
             }}
           >
             <button
+              className="btn btn-primary btn-sm"
+              onClick={() =>
+                navigate(
+                  `/app/produtos/${encodeURIComponent(product.sku)}/editar`
+                )
+              }
+            >
+              ✏️ Editar produto
+            </button>
+
+            <button
               className="btn btn-ghost btn-sm"
               onClick={handleExcluir}
               disabled={excluindo}
@@ -233,14 +295,7 @@ export default function ProductDetail() {
                 borderColor: "#f8b4b4",
               }}
             >
-              {excluindo ? "Excluindo..." : "🗑️ Excluir produto"}
-            </button>
-
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => navigate("/app/movimentacoes")}
-            >
-              Registrar movimentação
+              {excluindo ? "A eliminar..." : "🗑️ Eliminar produto"}
             </button>
           </div>
         </div>
