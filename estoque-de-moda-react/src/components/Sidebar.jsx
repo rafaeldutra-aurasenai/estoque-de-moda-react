@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getUsuario, limparSessao } from "../auth.js";
+import logo from "../public/logo-vestispace.png";
 
 function Item({ to, icon, children, end }) {
   return (
@@ -30,7 +31,11 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <NavLink to="/app/dashboard" className="brand">
-        <div className="mark">M</div>
+        <img
+          src={logo}
+          alt="Vestispace"
+          className="brand-logo"
+        />
         <span>Estoque de Moda</span>
       </NavLink>
 

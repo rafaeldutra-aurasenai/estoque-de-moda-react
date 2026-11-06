@@ -1,5 +1,7 @@
 
+import { useCallback, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import SplashScreen from "./components/SplashScreen.jsx";
 
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
@@ -27,9 +29,16 @@ import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [isSplashExiting, setIsSplashExiting] = useState(false);
+  const startLoginReveal = useCallback(() => setIsSplashExiting(true), []);
+  const finishSplash = useCallback(() => setShowSplash(false), []);
+
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
+    <>
+      {showSplash && <SplashScreen onExitStart={startLoginReveal} onComplete={finishSplash} />}
+      <Routes>
+      <Route path="/" element={<Login isRevealing={isSplashExiting} />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot" element={<Forgot />} />
 
@@ -81,6 +90,7 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
